@@ -65,6 +65,7 @@ app.notFound((c) =>
   c.redirect("/?fallbackBy=" + encodeURIComponent(c.req.path))
 );
 
+// ローカルで証明書を使う場合は `deno run ... localhost` として起動する分岐を残す
 const options = Deno.args[0] === "localhost"
   ? {
     cert: await Deno.readTextFile("./secret/cert.pem"),
@@ -72,7 +73,11 @@ const options = Deno.args[0] === "localhost"
   }
   : {};
 
+// 環境変数 PORT を優先して使う（なければ 443 をフォールバック）
+// Deno Deploy や Cloud Run などではホスティング側の PORT を渡すことが多いため安全
+const port = Number(Deno.env.get("PORT") ?? "443");
+
 Deno.serve({
-  port: 443,
+  port,
   ...options,
 }, app.fetch);
